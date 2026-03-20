@@ -1,0 +1,25 @@
+name: Teardown
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  teardown:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.14
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.0.0
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+      - name: Test aws cli
+        run: |
+          aws --version
+          aws sts get-caller-identity

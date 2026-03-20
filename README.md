@@ -1,2 +1,2 @@
-# sharkord
-Sharkord application built with AWS infra
+# Sharkord
+Sharkord application built with AWS CDK.
