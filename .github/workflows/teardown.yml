@@ -21,4 +21,5 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
       - name: Test aws cli
         run: |
+          aws --version
           aws sts get-caller-identity
