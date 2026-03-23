@@ -32,5 +32,9 @@ jobs:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.GHA_ROLE_ARN }}
       - name: Deploy to AWS
+        env:
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          SSH_INGRESS_CIDR: ${{ secrets.SSH_INGRESS_CIDR }}
         run: cdk deploy --app="python3 ${PWD}/app.py" --capabilities CAPABILITY_NAMED_IAM --require-approval=never
       

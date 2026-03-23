@@ -6,7 +6,7 @@ from resources.component import SharkordStack
 
 
 ACCOUNT: str = os.getenv(key="AWS_ACCOUNT_ID")
-REGION: str = os.getenv(key="AWS_REGION", default="us-east-1")
+REGION: str = os.getenv(key="AWS_REGION")
 
 
 print(f"ACCOUNT: {ACCOUNT}")
