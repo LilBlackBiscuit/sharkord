@@ -15,6 +15,7 @@ class SharkordServer(Construct):
             vpc_id=configs.Ec2.VPC_ID.value
         )
         self.__create_security_group()
+        self.__create_user_data()
         self.__create_instance(role=role)
         
     def __create_security_group(self):
@@ -29,6 +30,53 @@ class SharkordServer(Construct):
         self.security_group.add_ingress_rule(peer=aws_ec2.Peer.any_ipv4(), connection=aws_ec2.Port.tcp(port=443))
         self.security_group.add_ingress_rule(peer=aws_ec2.Peer.ipv4(cidr_ip=os.getenv(key="SSH_INGRESS_CIDR")), connection=aws_ec2.Port.tcp(port=22))
 
+    def __create_user_data(self):
+        self.user_data: aws_ec2.UserData = aws_ec2.UserData.for_linux()
+        self.user_data.add_commands(
+            # set autoupdate override flag
+            "export SHARKORD_AUTOUPDATE=true",
+            # download and start sharkord in the background
+            "curl -L https://github.com/sharkord/sharkord/releases/latest/download/sharkord-linux-x64 -o sharkord",
+            "chmod +x sharkord",
+            "./sharkord &",
+            # install caddy dependencies
+            "sudo apt update && sudo apt upgrade -y",
+            "sudo apt install -y wget ufw",
+            # install caddy
+            "wget \"https://github.com/caddyserver/caddy/releases/download/v2.11.2/caddy_2.11.2_linux_amd64.tar.gz\" -O /tmp/caddy.tar.gz",
+            "tar -xzf /tmp/caddy.tar.gz",
+            "sudo mv caddy /usr/local/bin/",
+            "sudo chmod +x /usr/local/bin/caddy",
+            "sudo mkdir -p /etc/caddy",
+            # create Caddyfile
+            "sudo echo \"chat.zolabs.io {\n\treverse_proxy 127.0.0.1:4991\n\tencode gzip\n}\" > /etc/caddy/Caddyfile",
+            # configure caddy service
+            "sudo echo \"[Unit]\n\" > /etc/systemd/system/caddy.service",
+            "sudo echo \"Description=Caddy Web Server\n\" >> /etc/systemd/system/caddy.service",
+            "sudo echo \"After=netwrok.target\n\" >> /etc/systemd/system/caddy.service",
+            "sudo echo \"\n[Service]\n\" >> /etc/systemd/system/caddy.service",
+            "sudo echo \"ExecStart=/usr/local/bin/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile\n\" >> /etc/systemd/system/caddy.service",
+            "sudo echo \"ExecReload=/usr/local/bin/caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile\n\" >> /etc/systemd/system/caddy.service",
+            "sudo echo \"Restart=on-failure\n\" >> /etc/systemd/system/caddy.service",
+            "sudo echo \"User=root\n\" >> /etc/systemd/system/caddy.service",
+            "sudo echo \"Group=root\n\" >> /etc/systemd/system/caddy.service",
+            "sudo echo \"AmbientCapabilities=CAP_NET_BIND_SERVICE\n\" >> /etc/systemd/system/caddy.service",
+            "sudo echo \"\n[Install]\n\" >> /etc/systemd/system/caddy.service",
+            "sudo echo \"WantedBy=multi-user.target\" >> /etc/systemd/system/caddy.service",
+            # start and enable caddy
+            "sudo systemctl daemon-reload",
+            "sudo systemctl enable caddy",
+            "sudo systemctl start caddy",
+            "sudo ufw --force enable",
+            "sudo ufw allow 22/tcp",
+            "sudo ufw allow 80/tcp",
+            "sudo ufw allow 443/tcp",
+            "sudo ufw allow 40000/tcp",
+            "sudo ufw allow 40000/udp",
+            "sudo ufw --force enable",
+            "sudo ufw --force reload",
+        )
+
     def __create_instance(self, role: aws_iam.Role):
         self.instance: aws_ec2.Instance = aws_ec2.Instance(
             scope=self,
@@ -37,7 +85,6 @@ class SharkordServer(Construct):
                 instance_class=aws_ec2.InstanceClass.T3,
                 instance_size=aws_ec2.InstanceSize.NANO
             ),
-            # TODO: do we need user_data here?
             machine_image=aws_ec2.MachineImage.latest_amazon_linux2023(),
             vpc=self.vpc,
             allow_all_ipv6_outbound=False,
@@ -60,8 +107,7 @@ class SharkordServer(Construct):
             role=role,
             security_group=self.security_group,
             ssm_session_permissions=True,
-            # TODO: do we need user_data here?
-            # user_data=aws_ec2.UserData(),
+            user_data=self.user_data,
             user_data_causes_replacement=True,
             vpc_subnets=aws_ec2.SubnetSelection(subnet_type=aws_ec2.SubnetType.PUBLIC)
         )
