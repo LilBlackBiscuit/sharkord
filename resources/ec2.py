@@ -26,7 +26,6 @@ class SharkordServer(Construct):
             description="Rules for Sharkord server access",
             security_group_name=configs.Ec2.SECURITY_GROUP_NAME.value
         )
-        self.security_group.add_egress_rule(peer=aws_ec2.Peer.any_ipv4(), connection=aws_ec2.Port.all_traffic())
         self.security_group.add_ingress_rule(peer=aws_ec2.Peer.any_ipv4(), connection=aws_ec2.Port.tcp(port=443))
         self.security_group.add_ingress_rule(peer=aws_ec2.Peer.ipv4(cidr_ip=os.getenv(key="SSH_INGRESS_CIDR")), connection=aws_ec2.Port.tcp(port=22))
 
