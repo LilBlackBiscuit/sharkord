@@ -3,8 +3,8 @@ from typing import Any
 import aws_cdk
 import constructs
 
-from iam import SharkordIam
-from ec2 import SharkordServer
+from resources.iam import SharkordIam
+from resources.ec2 import SharkordServer
 
 
 class SharkordStack(aws_cdk.Stack):

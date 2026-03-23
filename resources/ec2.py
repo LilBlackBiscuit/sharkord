@@ -3,7 +3,7 @@ import os
 from aws_cdk import aws_ec2, aws_iam
 from constructs import Construct
 
-import configs
+from resources import configs
 
 
 class SharkordServer(Construct):
