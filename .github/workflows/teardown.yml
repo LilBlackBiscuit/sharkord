@@ -8,12 +8,14 @@ jobs:
   teardown:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup python
-        uses: actions/setup-python@v6
+      - name: Setup node
+        uses: actions/setup-node@v6
         with:
-          python-version: 3.14
+          node-version: 24.14.0
       - name: Checkout code
         uses: actions/checkout@v6
+      - name: Install dependencies
+        run: npm install -g aws-cdk
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6.0.0
         with:
@@ -21,7 +23,3 @@ jobs:
           role-to-assume: ${{ secrets.GHA_ROLE_ARN }}
       - name: Destroy stack
         run: cdk destroy --app="python3 ${PWD}/app.py" --force
-      # - name: Test aws cli
-      #   run: |
-      #     aws --version
-      #     aws sts get-caller-identity
