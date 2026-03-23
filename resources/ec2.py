@@ -24,7 +24,7 @@ class SharkordServer(Construct):
             vpc=self.vpc,
             allow_all_outbound=True,
             description="Rules for Sharkord server access",
-            security_group_name=configs.Ec2.SECURITY_GROUP_NAME
+            security_group_name=configs.Ec2.SECURITY_GROUP_NAME.value
         )
         self.security_group.add_egress_rule(peer=aws_ec2.Peer.any_ipv4(), connection=aws_ec2.Port.all_traffic())
         self.security_group.add_ingress_rule(peer=aws_ec2.Peer.any_ipv4(), connection=aws_ec2.Port.tcp(port=443))
@@ -52,11 +52,11 @@ class SharkordServer(Construct):
             http_endpoint=True,
             http_protocol_ipv6=False,
             instance_initiated_shutdown_behavior=aws_ec2.InstanceInitiatedShutdownBehavior.STOP,
-            instance_name=configs.Ec2.INSTANCE_NAME,
+            instance_name=configs.Ec2.INSTANCE_NAME.value,
             key_pair=aws_ec2.KeyPair(
                 scope=self,
                 id="SharkordKeyPair",
-                key_pair_name=configs.Ec2.INSTANCE_KEY_PAIR_NAME
+                key_pair_name=configs.Ec2.INSTANCE_KEY_PAIR_NAME.value
             ),
             role=role,
             security_group=self.security_group,
