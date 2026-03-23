@@ -47,7 +47,7 @@ class SharkordServer(Construct):
             disable_api_termination=False,
             ebs_optimized=False,
             enclave_enabled=False,
-            hibernation_enabled=True,
+            hibernation_enabled=False,
             http_endpoint=True,
             http_protocol_ipv6=False,
             instance_initiated_shutdown_behavior=aws_ec2.InstanceInitiatedShutdownBehavior.STOP,
