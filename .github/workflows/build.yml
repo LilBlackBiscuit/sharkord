@@ -22,8 +22,10 @@ jobs:
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.GHA_ROLE_ARN }}
-      - name: Test aws cli
-        run: |
-          aws --version
-          aws sts get-caller-identity
+      - name: Deploy to AWS
+        run: cdk deploy --app="python3 ${PWD}/app.py" --capabilities CAPABILITY_NAMED_IAM --require-approval=never
+      # - name: Test aws cli
+      #   run: |
+      #     aws --version
+      #     aws sts get-caller-identity
       

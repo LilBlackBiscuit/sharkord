@@ -18,8 +18,10 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v6.0.0
         with:
           aws-region: us-east-1
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-      - name: Test aws cli
-        run: |
-          aws --version
-          aws sts get-caller-identity
+          role-to-assume: ${{ secrets.GHA_ROLE_ARN }}
+      - name: Destroy stack
+        run: cdk destroy --app="python3 ${PWD}/app.py" --force
+      # - name: Test aws cli
+      #   run: |
+      #     aws --version
+      #     aws sts get-caller-identity
