@@ -33,77 +33,25 @@ class SharkordServer(Construct):
     def __create_user_data(self):
         self.user_data: aws_ec2.UserData = aws_ec2.UserData.for_linux()
         self.user_data.add_commands(
-            # set sharkord autoupdate override flag
+            "cd",
+            "sudo yum update -y",
             "export SHARKORD_AUTOUPDATE=true",
-
-            # download and start sharkord
             "sudo curl -L 'https://github.com/sharkord/sharkord/releases/latest/download/sharkord-linux-x64' -o sharkord",
             "sudo chmod +x sharkord",
-            # TODO: determine when, where, and how to start this thing
-            # "./sharkord",
-
-            # install xcaddy and dependencies
-            "sudo wget 'https://go.dev/dl/go1.26.1.linux-amd64.tar.gz'",
-            "sudo rm -rf /usr/local/go",
-            "sudo tar -C /usr/local -xzf go1.26.1.linux-amd64.tar.gz",
-            "sudo rm -rf go1.26.1.linux-amd64.tar.gz",
-            "sudo wget 'https://github.com/caddyserver/xcaddy/releases/download/v0.4.5/xcaddy_0.4.5_linux_amd64.tar.gz' -O xcaddy.tar.gz",
-            "sudo tar -xzf xcaddy.tar.gz",
-            "sudo rm -rf xcaddy.tar.gz",
-            "sudo chmod +x xcaddy",
-
-            # build caddy with additional cloudflare module
-            "sudo mkdir temp",
-            "sudo ln -s temp/ /tmp/",
-            # TODO: still need to update the sudo PATH using 'sudo visudo' so that 'xcaddy build' works -> https://stackoverflow.com/a/71910152
-            "sudo xcaddy build --with github.com/caddy-dns/cloudflare",
-            # TODO: remove symlink
-            # TODO: delete temp/
-
-
-
-
-
-
-
-
-
-
-            # install caddy dependencies
-            # TODO: we don't have access to apt (I think it's yum on amazon linux)
-            "sudo apt update && sudo apt upgrade -y",
-            "sudo apt install -y ufw",
-            "sudo mv caddy /usr/local/bin/",
-            "sudo chmod +x /usr/local/bin/caddy",
-            "sudo mkdir -p /etc/caddy",
-            # create Caddyfile
-            "sudo printf 'chat.zolabs.io {\n\treverse_proxy 127.0.0.1:4991\n\tencode gzip\n}' > /etc/caddy/Caddyfile",
-            # configure caddy service
-            "sudo printf '[Unit]\n' > /etc/systemd/system/caddy.service",
-            "sudo printf 'Description=Caddy Web Server\n' >> /etc/systemd/system/caddy.service",
-            "sudo printf 'After=netwrok.target\n' >> /etc/systemd/system/caddy.service",
-            "sudo printf '\n[Service]\n' >> /etc/systemd/system/caddy.service",
-            "sudo printf 'ExecStart=/usr/local/bin/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile\n' >> /etc/systemd/system/caddy.service",
-            "sudo printf 'ExecReload=/usr/local/bin/caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile\n' >> /etc/systemd/system/caddy.service",
-            "sudo printf 'Restart=on-failure\n' >> /etc/systemd/system/caddy.service",
-            "sudo printf 'User=root\n' >> /etc/systemd/system/caddy.service",
-            "sudo printf 'Group=root\n' >> /etc/systemd/system/caddy.service",
-            "sudo printf 'AmbientCapabilities=CAP_NET_BIND_SERVICE\n' >> /etc/systemd/system/caddy.service",
-            "sudo printf '\n[Install]\n' >> /etc/systemd/system/caddy.service",
-            "sudo printf 'WantedBy=multi-user.target' >> /etc/systemd/system/caddy.service",
-            # start and enable caddy
-            "sudo systemctl daemon-reload",
-            "sudo systemctl enable caddy",
-            "sudo systemctl start caddy",
-            # set up firewall
-            "sudo ufw --force enable",
-            "sudo ufw allow 22/tcp",
-            "sudo ufw allow 80/tcp",
-            "sudo ufw allow 443/tcp",
-            "sudo ufw allow 40000/tcp",
-            "sudo ufw allow 40000/udp",
-            "sudo ufw --force enable",
-            "sudo ufw --force reload",
+            "sudo yum install -y httpd mod_ssl",
+            "sudo systemctl start httpd",
+            "aws secretsmanager get-secret-value --secret-id cloudflare/origin_certificate --query SecretString --output text | jq -r .certificate | openssl base64 -A -d > localhost.crt",
+            "sudo chown root:root localhost.crt",
+            "sudo chmod 600 localhost.crt",
+            "sudo mv localhost.crt /etc/pki/tls/certs/",
+            "aws secretsmanager get-secret-value --secret-id cloudflare/origin_certificate --query SecretString --output text | jq -r .key | openssl base64 -A -d > localhost.key",
+            "sudo chown root:root localhost.key",
+            "sudo chmod 600 localhost.key",
+            "sudo mv localhost.key /etc/pki/tls/private/",
+            "printf 'ProxyPass \"/\" \"127.0.0.1:4991\"\n' | sudo tee -a /etc/httpd/conf.d/ssl.conf",
+            "printf 'ProxyPassReverse \"/\" \"127.0.0.1:4991\"\n' | sudo tee -a /etc/httpd/conf.d/ssl.conf",
+            "sudo systemctl restart httpd",
+            "./sharkord"
         )
 
     def __create_instance(self, role: aws_iam.Role):
