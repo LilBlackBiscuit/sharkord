@@ -1,7 +1,10 @@
+import os
+
 from aws_cdk import aws_iam
 from constructs import Construct
 
-from resources import configs
+
+CERTIFICATE_ARN: str = os.getenv(key="CLOUDFLARE_ORIGIN_CERTIFICATE_SECRET_ARN")
 
 
 class SharkordIam(Construct):
@@ -26,7 +29,7 @@ class SharkordIam(Construct):
                             sid="SharkordServerSecretsManager",
                             effect=aws_iam.Effect.ALLOW,
                             actions=["secretsmanager:GetSecretValue"],
-                            resources=[configs.Iam.CLOUDFLARE_ORIGIN_CERTIFICATE_ARN.value]
+                            resources=[CERTIFICATE_ARN]
                         )
                     ]
                 )
