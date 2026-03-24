@@ -29,4 +29,7 @@ jobs:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.GHA_ROLE_ARN }}
       - name: Destroy stack
+        env:
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_REGION: ${{ env.AWS_REGION }}
         run: cdk destroy --app="python3 ${PWD}/app.py" --force

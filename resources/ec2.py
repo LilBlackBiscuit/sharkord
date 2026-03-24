@@ -33,12 +33,40 @@ class SharkordServer(Construct):
     def __create_user_data(self):
         self.user_data: aws_ec2.UserData = aws_ec2.UserData.for_linux()
         self.user_data.add_commands(
-            # set autoupdate override flag
+            # set sharkord autoupdate override flag
             "export SHARKORD_AUTOUPDATE=true",
-            # download and start sharkord in the background
-            "curl -L https://github.com/sharkord/sharkord/releases/latest/download/sharkord-linux-x64 -o sharkord",
-            "chmod +x sharkord",
-            "./sharkord &",
+
+            # download and start sharkord
+            "sudo curl -L 'https://github.com/sharkord/sharkord/releases/latest/download/sharkord-linux-x64' -o sharkord",
+            "sudo chmod +x sharkord",
+            # TODO: determine when, where, and how to start this thing
+            # "./sharkord",
+
+            # install xcaddy and dependencies
+            "sudo wget 'https://go.dev/dl/go1.26.1.linux-amd64.tar.gz'",
+            "sudo rm -rf /usr/local/go",
+            "sudo tar -C /usr/local -xzf go1.26.1.linux-amd64.tar.gz",
+            "sudo rm -rf go1.26.1.linux-amd64.tar.gz",
+            "sudo wget 'https://github.com/caddyserver/xcaddy/releases/download/v0.4.5/xcaddy_0.4.5_linux_amd64.tar.gz' -O xcaddy.tar.gz",
+            "sudo tar -xzf xcaddy.tar.gz",
+            "sudo rm -rf xcaddy.tar.gz",
+            "sudo chmod +x xcaddy",
+
+            # build caddy with additional cloudflare module
+            "sudo mkdir temp",
+            "sudo ln -s temp/ /tmp/",
+            "sudo xcaddy build --with github.com/caddy-dns/cloudflare",
+            # TODO: still need to update the sudo PATH using 'sudo visudo'so that 'xcaddy build' works -> https://stackoverflow.com/a/71910152
+
+
+
+
+
+
+
+
+
+
             # install caddy dependencies
             "sudo apt update && sudo apt upgrade -y",
             "sudo apt install -y wget ufw",
