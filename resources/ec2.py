@@ -55,8 +55,10 @@ class SharkordServer(Construct):
             # build caddy with additional cloudflare module
             "sudo mkdir temp",
             "sudo ln -s temp/ /tmp/",
+            # TODO: still need to update the sudo PATH using 'sudo visudo' so that 'xcaddy build' works -> https://stackoverflow.com/a/71910152
             "sudo xcaddy build --with github.com/caddy-dns/cloudflare",
-            # TODO: still need to update the sudo PATH using 'sudo visudo'so that 'xcaddy build' works -> https://stackoverflow.com/a/71910152
+            # TODO: remove symlink
+            # TODO: delete temp/
 
 
 
@@ -68,11 +70,9 @@ class SharkordServer(Construct):
 
 
             # install caddy dependencies
+            # TODO: we don't have access to apt (I think it's yum on amazon linux)
             "sudo apt update && sudo apt upgrade -y",
-            "sudo apt install -y wget ufw",
-            # install caddy
-            "wget 'https://github.com/caddyserver/caddy/releases/download/v2.11.2/caddy_2.11.2_linux_amd64.tar.gz' -O /tmp/caddy.tar.gz",
-            "tar -xzf /tmp/caddy.tar.gz",
+            "sudo apt install -y ufw",
             "sudo mv caddy /usr/local/bin/",
             "sudo chmod +x /usr/local/bin/caddy",
             "sudo mkdir -p /etc/caddy",
