@@ -32,4 +32,5 @@ jobs:
         env:
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           AWS_REGION: ${{ env.AWS_REGION }}
+          SSH_INGRESS_CIDR: ${{ secrets.SSH_INGRESS_CIDR }}
         run: cdk destroy --app="python3 ${PWD}/app.py" --force
