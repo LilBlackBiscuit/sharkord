@@ -35,6 +35,7 @@ jobs:
         env:
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           AWS_REGION: ${{ env.AWS_REGION }}
+          CLOUDFLARE_ORIGIN_CERTIFICATE_SECRET_ARN: ${{ secrets.CLOUDFLARE_ORIGIN_CERTIFICATE_SECRET_ARN }}
           SSH_INGRESS_CIDR: ${{ secrets.SSH_INGRESS_CIDR }}
         run: cdk deploy --app="python3 ${PWD}/app.py" --capabilities CAPABILITY_NAMED_IAM --require-approval=never
       
