@@ -15,7 +15,7 @@ class SharkordServer(Construct):
             vpc_id=configs.Ec2.VPC_ID.value
         )
         self.__create_security_group()
-        self.__create_user_data()
+        # self.__create_user_data()
         self.__create_instance(role=role)
         
     def __create_security_group(self):
@@ -43,30 +43,31 @@ class SharkordServer(Construct):
             "sudo apt update && sudo apt upgrade -y",
             "sudo apt install -y wget ufw",
             # install caddy
-            "wget \"https://github.com/caddyserver/caddy/releases/download/v2.11.2/caddy_2.11.2_linux_amd64.tar.gz\" -O /tmp/caddy.tar.gz",
+            "wget 'https://github.com/caddyserver/caddy/releases/download/v2.11.2/caddy_2.11.2_linux_amd64.tar.gz' -O /tmp/caddy.tar.gz",
             "tar -xzf /tmp/caddy.tar.gz",
             "sudo mv caddy /usr/local/bin/",
             "sudo chmod +x /usr/local/bin/caddy",
             "sudo mkdir -p /etc/caddy",
             # create Caddyfile
-            "sudo echo \"chat.zolabs.io {\n\treverse_proxy 127.0.0.1:4991\n\tencode gzip\n}\" > /etc/caddy/Caddyfile",
+            "sudo printf 'chat.zolabs.io {\n\treverse_proxy 127.0.0.1:4991\n\tencode gzip\n}' > /etc/caddy/Caddyfile",
             # configure caddy service
-            "sudo echo \"[Unit]\n\" > /etc/systemd/system/caddy.service",
-            "sudo echo \"Description=Caddy Web Server\n\" >> /etc/systemd/system/caddy.service",
-            "sudo echo \"After=netwrok.target\n\" >> /etc/systemd/system/caddy.service",
-            "sudo echo \"\n[Service]\n\" >> /etc/systemd/system/caddy.service",
-            "sudo echo \"ExecStart=/usr/local/bin/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile\n\" >> /etc/systemd/system/caddy.service",
-            "sudo echo \"ExecReload=/usr/local/bin/caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile\n\" >> /etc/systemd/system/caddy.service",
-            "sudo echo \"Restart=on-failure\n\" >> /etc/systemd/system/caddy.service",
-            "sudo echo \"User=root\n\" >> /etc/systemd/system/caddy.service",
-            "sudo echo \"Group=root\n\" >> /etc/systemd/system/caddy.service",
-            "sudo echo \"AmbientCapabilities=CAP_NET_BIND_SERVICE\n\" >> /etc/systemd/system/caddy.service",
-            "sudo echo \"\n[Install]\n\" >> /etc/systemd/system/caddy.service",
-            "sudo echo \"WantedBy=multi-user.target\" >> /etc/systemd/system/caddy.service",
+            "sudo printf '[Unit]\n' > /etc/systemd/system/caddy.service",
+            "sudo printf 'Description=Caddy Web Server\n' >> /etc/systemd/system/caddy.service",
+            "sudo printf 'After=netwrok.target\n' >> /etc/systemd/system/caddy.service",
+            "sudo printf '\n[Service]\n' >> /etc/systemd/system/caddy.service",
+            "sudo printf 'ExecStart=/usr/local/bin/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile\n' >> /etc/systemd/system/caddy.service",
+            "sudo printf 'ExecReload=/usr/local/bin/caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile\n' >> /etc/systemd/system/caddy.service",
+            "sudo printf 'Restart=on-failure\n' >> /etc/systemd/system/caddy.service",
+            "sudo printf 'User=root\n' >> /etc/systemd/system/caddy.service",
+            "sudo printf 'Group=root\n' >> /etc/systemd/system/caddy.service",
+            "sudo printf 'AmbientCapabilities=CAP_NET_BIND_SERVICE\n' >> /etc/systemd/system/caddy.service",
+            "sudo printf '\n[Install]\n' >> /etc/systemd/system/caddy.service",
+            "sudo printf 'WantedBy=multi-user.target' >> /etc/systemd/system/caddy.service",
             # start and enable caddy
             "sudo systemctl daemon-reload",
             "sudo systemctl enable caddy",
             "sudo systemctl start caddy",
+            # set up firewall
             "sudo ufw --force enable",
             "sudo ufw allow 22/tcp",
             "sudo ufw allow 80/tcp",
@@ -107,7 +108,5 @@ class SharkordServer(Construct):
             role=role,
             security_group=self.security_group,
             ssm_session_permissions=True,
-            user_data=self.user_data,
-            user_data_causes_replacement=True,
             vpc_subnets=aws_ec2.SubnetSelection(subnet_type=aws_ec2.SubnetType.PUBLIC)
         )
