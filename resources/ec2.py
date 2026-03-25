@@ -78,7 +78,8 @@ class SharkordServer(Construct):
             "Description=Sharkord Server\n"
             "After=network.target\n\n"
             "[Service]\n"
-            "Type=simple\n"
+            "User=ec2-user\n"
+            "Group=ec2-user\n"
             "WorkingDirectory=/opt/sharkord\n"
             "ExecStart=/opt/sharkord/sharkord\n"
             "Restart=always\n"
@@ -87,7 +88,7 @@ class SharkordServer(Construct):
             "NoNewPrivileges=true\n"
             "PrivateTmp=true\n"
             "ProtectSystem=full\n"
-            "ProtectHome=true\n\n"
+            "ProtectHome=false\n\n"
             "[Install]\n"
             "WantedBy=multi-user.target\n"
             "EOF",
