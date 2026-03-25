@@ -43,14 +43,6 @@ class SharkordServer(Construct):
             "sudo yum update -y",
             "sudo yum install -y httpd mod_ssl",
 
-            # create global SSL config (Amazon Linux 2023 does not ship ssl.conf)
-            "sudo tee /etc/httpd/conf.d/00-ssl-base.conf > /dev/null << 'EOF'\n"
-            "Listen 443 https\n"
-            "SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1\n"
-            "SSLCipherSuite HIGH:!aNULL:!MD5\n"
-            "SSLHonorCipherOrder on\n"
-            "EOF",
-
             # fetch cloudflare origin certificate and key
             "aws secretsmanager get-secret-value --secret-id cloudflare/origin_certificate --query SecretString --output text | jq -r .certificate | openssl base64 -A -d > localhost.crt",
             "aws secretsmanager get-secret-value --secret-id cloudflare/origin_certificate --query SecretString --output text | jq -r .key | openssl base64 -A -d > localhost.key",
@@ -59,10 +51,13 @@ class SharkordServer(Construct):
             "sudo mv localhost.crt /etc/pki/tls/certs/",
             "sudo mv localhost.key /etc/pki/tls/private/",
 
-            # create apache reverse proxy config WITH SSL
+            # create apache reverse proxy config
             "sudo tee /etc/httpd/conf.d/sharkord-proxy.conf > /dev/null << 'EOF'\n"
             "<IfModule mod_ssl.c>\n"
             "<VirtualHost *:443>\n"
+            "    ServerName zolabs.io\n"
+            "    ServerAlias www.zolabs.io\n"
+            "\n"
             "    SSLEngine on\n"
             "    SSLCertificateFile /etc/pki/tls/certs/localhost.crt\n"
             "    SSLCertificateKeyFile /etc/pki/tls/private/localhost.key\n"
@@ -74,7 +69,7 @@ class SharkordServer(Construct):
             "</IfModule>\n"
             "EOF",
 
-            # start Apache
+            # start apache
             "sudo systemctl enable httpd",
             "sudo systemctl restart httpd",
 
@@ -105,13 +100,11 @@ class SharkordServer(Construct):
             "WantedBy=multi-user.target\n"
             "EOF",
 
-            # enable and start Sharkord service
+            # enable and start sharkord service
             "sudo systemctl daemon-reload",
             "sudo systemctl enable sharkord",
             "sudo systemctl start sharkord"
         )
-
-
 
     def __create_instance(self, role: aws_iam.Role):
         self.instance = aws_ec2.Instance(
