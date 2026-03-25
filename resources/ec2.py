@@ -150,6 +150,6 @@ class SharkordServer(Construct):
         _: aws_ec2.CfnEipAssociation = aws_ec2.CfnEIPAssociation(
             scope=self,
             id="SharkordServerEipAssociation",
-            eip=self.elastic_ip.ref,
+            allocation_id=self.elastic_ip.attr_allocation_id,
             instance_id=self.instance.instance_id
         )
