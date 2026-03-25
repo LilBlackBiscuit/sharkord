@@ -129,6 +129,7 @@ class SharkordServer(Construct):
             security_group=self.security_group,
             ssm_session_permissions=True,
             user_data=self.user_data,
+            user_data_causes_replacement=True,
             vpc_subnets=aws_ec2.SubnetSelection(subnet_type=aws_ec2.SubnetType.PUBLIC)
         )
 
