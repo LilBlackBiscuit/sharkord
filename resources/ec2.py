@@ -71,7 +71,7 @@ class SharkordServer(Construct):
 
             # start apache
             "sudo systemctl enable httpd",
-            "sudo systemctl restart httpd",
+            "sudo systemctl start httpd",
 
             # install sharkord into /opt/sharkord
             "sudo mkdir -p /opt/sharkord",
