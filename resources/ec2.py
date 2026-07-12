@@ -19,9 +19,10 @@ class SharkordServer(Construct):
         )
 
         self.__create_security_group()
+        self.__allocate_elastic_ip()
         self.__create_user_data()
         self.__create_instance(role=role)
-        self.__create_elastic_ip()
+        self.__associate_elastic_ip()
 
     def __create_security_group(self):
         self.security_group: aws_ec2.SecurityGroup = aws_ec2.SecurityGroup(
@@ -33,6 +34,8 @@ class SharkordServer(Construct):
             security_group_name=configs.Ec2.SECURITY_GROUP_NAME.value
         )
         self.security_group.add_ingress_rule(peer=aws_ec2.Peer.any_ipv4(), connection=aws_ec2.Port.tcp(443))
+        self.security_group.add_ingress_rule(peer=aws_ec2.Peer.any_ipv4(), connection=aws_ec2.Port.tcp(40000))
+        self.security_group.add_ingress_rule(peer=aws_ec2.Peer.any_ipv4(), connection=aws_ec2.Port.udp(40000))
         self.security_group.add_ingress_rule(peer=aws_ec2.Peer.ipv4(os.getenv("SSH_INGRESS_CIDR")), connection=aws_ec2.Port.tcp(22))
 
     def __create_user_data(self):
@@ -63,6 +66,11 @@ class SharkordServer(Construct):
             "    SSLCertificateKeyFile /etc/pki/tls/private/localhost.key\n"
             "\n"
             "    ProxyPreserveHost On\n"
+            "\n"
+            "    RewriteEngine On\n"
+            "    RewriteCond %{HTTP:Upgrade} =websocket [NC]\n"
+            "    RewriteRule ^/?(.*) ws://localhost:4991/$1 [P,L]\n"
+            "\n"
             "    ProxyPass / http://localhost:4991/\n"
             "    ProxyPassReverse / http://localhost:4991/\n"
             "</VirtualHost>\n"
@@ -92,6 +100,7 @@ class SharkordServer(Construct):
             "Restart=always\n"
             "RestartSec=5\n"
             "Environment=\"SHARKORD_AUTOUPDATE=true\"\n"
+            f"Environment=\"SHARKORD_WEBRTC_ANNOUNCED_ADDRESS={self.elastic_ip.attr_public_ip}\"\n"
             "NoNewPrivileges=true\n"
             "PrivateTmp=true\n"
             "ProtectSystem=full\n"
@@ -141,12 +150,14 @@ class SharkordServer(Construct):
             vpc_subnets=aws_ec2.SubnetSelection(subnet_type=aws_ec2.SubnetType.PUBLIC)
         )
 
-    def __create_elastic_ip(self):
+    def __allocate_elastic_ip(self):
         self.elastic_ip = aws_ec2.CfnEIP(
             scope=self,
             id="SharkordServerEip",
             domain="vpc"
         )
+
+    def __associate_elastic_ip(self):
         _: aws_ec2.CfnEipAssociation = aws_ec2.CfnEIPAssociation(
             scope=self,
             id="SharkordServerEipAssociation",
