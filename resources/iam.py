@@ -30,6 +30,16 @@ class SharkordIam(Construct):
                             effect=aws_iam.Effect.ALLOW,
                             actions=["secretsmanager:GetSecretValue"],
                             resources=[CERTIFICATE_ARN]
+                        ),
+                        aws_iam.PolicyStatement(
+                            sid="SharkordServerAccessTokenPersistence",
+                            effect=aws_iam.Effect.ALLOW,
+                            actions=[
+                                "secretsmanager:CreateSecret",
+                                "secretsmanager:PutSecretValue",
+                                "secretsmanager:DescribeSecret"
+                            ],
+                            resources=["*"]
                         )
                     ]
                 )

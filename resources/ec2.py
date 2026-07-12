@@ -112,7 +112,20 @@ class SharkordServer(Construct):
             # enable and start sharkord service
             "sudo systemctl daemon-reload",
             "sudo systemctl enable sharkord",
-            "sudo systemctl start sharkord"
+            "sudo systemctl start sharkord",
+
+            # capture the one-time admin access token (only printed on first boot,
+            # never written to disk) and persist it so it survives instance replacement
+            "SHARKORD_TOKEN=\"\"\n"
+            "for i in $(seq 1 30); do\n"
+            "    SHARKORD_TOKEN=$(journalctl -u sharkord --no-pager | grep -oE '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' | head -n1)\n"
+            "    [ -n \"$SHARKORD_TOKEN\" ] && break\n"
+            "    sleep 2\n"
+            "done\n"
+            "if [ -n \"$SHARKORD_TOKEN\" ]; then\n"
+            "    aws secretsmanager put-secret-value --secret-id sharkord/server_access_token --secret-string \"$SHARKORD_TOKEN\" \\\n"
+            "        || aws secretsmanager create-secret --name sharkord/server_access_token --secret-string \"$SHARKORD_TOKEN\"\n"
+            "fi"
         )
 
     def __create_instance(self, role: aws_iam.Role):
