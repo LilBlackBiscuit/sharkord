@@ -118,7 +118,7 @@ class SharkordServer(Construct):
             # never written to disk) and persist it so it survives instance replacement
             "SHARKORD_TOKEN=\"\"\n"
             "for i in $(seq 1 30); do\n"
-            "    SHARKORD_TOKEN=$(journalctl -u sharkord --no-pager | grep -oE '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' | head -n1)\n"
+            "    SHARKORD_TOKEN=$(journalctl -u sharkord --no-pager | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -n1)\n"
             "    [ -n \"$SHARKORD_TOKEN\" ] && break\n"
             "    sleep 2\n"
             "done\n"
