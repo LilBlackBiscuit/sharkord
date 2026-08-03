@@ -8,11 +8,11 @@ CERTIFICATE_ARN: str = os.getenv(key="CLOUDFLARE_ORIGIN_CERTIFICATE_SECRET_ARN")
 
 
 class SharkordIam(Construct):
-    def __init__(self, scope: Construct, id: str):
+    def __init__(self, scope: Construct, id: str, ssm_parameter_arn: str):
         super().__init__(scope=scope, id=id)
-        self.__create_server_role()
+        self.__create_server_role(ssm_parameter_arn=ssm_parameter_arn)
 
-    def __create_server_role(self):
+    def __create_server_role(self, ssm_parameter_arn: str):
         self.server_role: aws_iam.Role = aws_iam.Role(
             scope=self,
             id="SharkordServerRole",
@@ -40,6 +40,12 @@ class SharkordIam(Construct):
                                 "secretsmanager:DescribeSecret"
                             ],
                             resources=["*"]
+                        ),
+                        aws_iam.PolicyStatement(
+                            sid="SharkordServerHostnameParameter",
+                            effect=aws_iam.Effect.ALLOW,
+                            actions=["ssm:GetParameter"],
+                            resources=[ssm_parameter_arn]
                         )
                     ]
                 )

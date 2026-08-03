@@ -54,12 +54,18 @@ class SharkordServer(Construct):
             "sudo mv localhost.crt /etc/pki/tls/certs/",
             "sudo mv localhost.key /etc/pki/tls/private/",
 
-            # create apache reverse proxy config
-            "sudo tee /etc/httpd/conf.d/sharkord-proxy.conf > /dev/null << 'EOF'\n"
+            # install a script that (re)generates the apache vhost from the
+            # SSM-stored hostname and reloads apache; re-run it any time via
+            # SSM Run Command to change the hostname without replacing the instance
+            "sudo mkdir -p /opt/sharkord",
+            "sudo tee /opt/sharkord/apply-config.sh > /dev/null << 'EOF'\n"
+            "#!/bin/bash\n"
+            "set -e\n"
+            f"SERVER_HOSTNAME=$(aws ssm get-parameter --name {configs.Ssm.SERVER_HOSTNAME_PARAM.value} --query Parameter.Value --output text)\n"
+            "tee /etc/httpd/conf.d/sharkord-proxy.conf > /dev/null << VHOST\n"
             "<IfModule mod_ssl.c>\n"
             "<VirtualHost *:443>\n"
-            "    ServerName zolabs.io\n"
-            "    ServerAlias www.zolabs.io\n"
+            "    ServerName $SERVER_HOSTNAME\n"
             "\n"
             "    SSLEngine on\n"
             "    SSLCertificateFile /etc/pki/tls/certs/localhost.crt\n"
@@ -69,20 +75,23 @@ class SharkordServer(Construct):
             "\n"
             "    RewriteEngine On\n"
             "    RewriteCond %{HTTP:Upgrade} =websocket [NC]\n"
-            "    RewriteRule ^/?(.*) ws://localhost:4991/$1 [P,L]\n"
+            "    RewriteRule ^/?(.*) ws://localhost:4991/\\$1 [P,L]\n"
             "\n"
             "    ProxyPass / http://localhost:4991/\n"
             "    ProxyPassReverse / http://localhost:4991/\n"
             "</VirtualHost>\n"
             "</IfModule>\n"
+            "VHOST\n"
+            "apachectl configtest\n"
+            "sudo systemctl reload-or-restart httpd\n"
             "EOF",
+            "sudo chmod +x /opt/sharkord/apply-config.sh",
 
-            # start apache
+            # generate the initial vhost and start apache
             "sudo systemctl enable httpd",
-            "sudo systemctl start httpd",
+            "sudo /opt/sharkord/apply-config.sh",
 
             # install sharkord into /opt/sharkord
-            "sudo mkdir -p /opt/sharkord",
             "sudo chown ec2-user:ec2-user /opt/sharkord",
             "curl -L 'https://github.com/sharkord/sharkord/releases/latest/download/sharkord-linux-x64' -o /opt/sharkord/sharkord",
             "sudo chmod +x /opt/sharkord/sharkord",
